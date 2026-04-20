@@ -959,3 +959,98 @@ create index idx_usuarios_empresa
 create index idx_usuarios_rol
     on usuarios (rol_id);
 
+-- MOdificacion de tabla transacciones para llevar el control de los movimientos
+
+-- 1. Renombrar la tabla de transacciones_bancarias a transacciones
+RENAME TABLE transacciones_bancarias TO transacciones;
+
+-- 2. Eliminar la llave foránea y el índice de la columna cuenta_id
+ALTER TABLE transacciones DROP FOREIGN KEY fk_transacciones_banco;
+DROP INDEX idx_transacciones_cuenta ON transacciones;
+
+-- 3. Eliminar la columna cuenta_id
+ALTER TABLE transacciones DROP COLUMN cuenta_id;
+
+-- 4. Agregar las nuevas columnas para relacionar con bancos y cajas
+-- Se permiten nulos para que una transacción pueda ser de un Banco O de una Caja
+ALTER TABLE transacciones
+    ADD COLUMN banco_id INT NULL AFTER id,
+    ADD COLUMN caja_id INT NULL AFTER banco_id;
+
+-- 5. Crear las nuevas relaciones (Llaves Foráneas)
+ALTER TABLE transacciones
+    ADD CONSTRAINT fk_transacciones_bancos
+    FOREIGN KEY (banco_id) REFERENCES contabilidad_bancos(id)
+    ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE transacciones
+    ADD CONSTRAINT fk_transacciones_cajas
+    FOREIGN KEY (caja_id) REFERENCES contabilidad_cajas(id)
+    ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- 6. Crear índices para optimizar las búsquedas por banco o caja
+CREATE INDEX idx_transacciones_banco ON transacciones(banco_id);
+CREATE INDEX idx_transacciones_caja ON transacciones(caja_id);
+
+--  Configuracion de la tabla metodo
+-- 1. Crear la tabla de métodos de pago
+CREATE TABLE transacciones_metodo_pago (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NULL,
+    estado TINYINT(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 2. Insertar métodos iniciales comunes
+INSERT INTO transacciones_metodo_pago (nombre, descripcion) VALUES
+('Efectivo', 'Pago en efectivo o moneda local'),
+('Transferencia Bancaria', 'Transferencia electrónica entre cuentas'),
+('Tarjeta de Crédito/Débito', 'Pago mediante terminal punto de venta'),
+('Cheque', 'Documentos bancarios nominativos');
+
+-- 3. Modificar la tabla transacciones (antes transacciones_bancarias)
+-- Se añade la nueva columna de relación
+ALTER TABLE transacciones ADD COLUMN metodo_pago_id INT NULL AFTER caja_id;
+
+-- 4. Crear la relación (Llave Foránea)
+ALTER TABLE transacciones
+    ADD CONSTRAINT fk_transacciones_metodo
+    FOREIGN KEY (metodo_pago_id) REFERENCES transacciones_metodo_pago(id)
+    ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- 5. Eliminar el campo 'metodo' antiguo (el que era un ENUM)
+ALTER TABLE transacciones DROP COLUMN metodo;
+
+-- 6. Crear índice para optimizar reportes por método de pago
+CREATE INDEX idx_transacciones_metodo_pago ON transacciones(metodo_pago_id);
+
+-- Para actualizar la tabla kardex_inventario
+
+-- 1. Renombrar el campo stock_saldo a stock_total
+ALTER TABLE kardex_inventario
+    CHANGE COLUMN stock_saldo stock_total DECIMAL(10, 2) NOT NULL;
+
+-- 2. Crear los campos stock_entrante y stock_saliente para un desglose claro por fila
+-- Se añaden después de costo_unid para mantener un orden lógico (Movimiento -> Saldo)
+ALTER TABLE kardex_inventario
+    ADD COLUMN stock_entrante DECIMAL(10, 2) DEFAULT 0.00 AFTER costo_unid,
+    ADD COLUMN stock_saliente DECIMAL(10, 2) DEFAULT 0.00 AFTER stock_entrante;
+
+-- 3. Agregar la columna de relación con documentos.id
+ALTER TABLE kardex_inventario
+    ADD COLUMN documento_id INT NULL AFTER usuario_id;
+
+-- 4. Crear la Llave Foránea para asegurar la integridad referencial
+ALTER TABLE kardex_inventario
+    ADD CONSTRAINT fk_kardex_documento
+    FOREIGN KEY (documento_id) REFERENCES documentos(id)
+    ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- 5. Crear un índice para optimizar las consultas de historial por documento
+CREATE INDEX idx_kardex_documento ON kardex_inventario(documento_id);
+
+-- Opcional: Si deseas migrar los datos actuales de 'cantidad' a las nuevas columnas
+-- basado en el tipo de movimiento ya registrado:
+UPDATE kardex_inventario SET stock_entrante = cantidad WHERE tipo = 'ENTRADA';
+UPDATE kardex_inventario SET stock_saliente = cantidad WHERE tipo = 'SALIDA';
+

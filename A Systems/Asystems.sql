@@ -1054,3 +1054,37 @@ CREATE INDEX idx_kardex_documento ON kardex_inventario(documento_id);
 UPDATE kardex_inventario SET stock_entrante = cantidad WHERE tipo = 'ENTRADA';
 UPDATE kardex_inventario SET stock_saliente = cantidad WHERE tipo = 'SALIDA';
 
+-- Actualizacion de tabla para crear tabla de confiramcion de publicacion
+
+CREATE TABLE IF NOT EXISTS articulo_publicado (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_articulo INT NOT NULL UNIQUE,
+    publicado TINYINT(1) DEFAULT 0,
+    fecha_publicacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_articulo) REFERENCES articulo(id) ON DELETE CASCADE
+);
+
+-- Implementacion de tabla para implemetar estado de presupuesto:
+-- 1. Crear tabla de estados de presupuesto
+CREATE TABLE IF NOT EXISTS `documentos_estado_presupuesto` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) NOT NULL,
+  `detalle` varchar(255) DEFAULT NULL,
+  `color` varchar(20) DEFAULT '#64748b',
+  `creado_en` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. Insertar estados iniciales
+INSERT INTO `documentos_estado_presupuesto` (`nombre`, `detalle`, `color`) VALUES
+('Aprobado', 'Presupuesto aceptado por el cliente o proveedor', '#10b981'),
+('Cancelado', 'Documento anulado o rechazado', '#ef4444'),
+('Facturado', 'Presupuesto convertido en documento contable final', '#3b82f6'),
+('En Revisión', 'Documento pendiente de confirmación o ajustes', '#f59e0b');
+
+-- 3. Vincular con la tabla de documentos
+ALTER TABLE `documentos` ADD COLUMN  `estado_presupuesto_id` INT(11) NULL after tipo_documento_id;
+ALTER TABLE `documentos` ADD CONSTRAINT `fk_documento_estado_pre`
+FOREIGN KEY (`estado_presupuesto_id`) REFERENCES `documentos_estado_presupuesto`(`id`)
+ON DELETE SET NULL;
+

@@ -1096,3 +1096,33 @@ ADD COLUMN `servicio_recurrente_id` INT DEFAULT NULL AFTER `presupuesto_id`;
 ALTER TABLE `documentos`
 ADD CONSTRAINT `fk_documento_servicio_recurrente`
 FOREIGN KEY (`servicio_recurrente_id`) REFERENCES `servicios_recurrentes`(`id`) ON DELETE SET NULL;
+--
+ALTER TABLE aplicaciones_pago
+    DROP FOREIGN KEY aplicaciones_pago_ibfk_1;
+
+ALTER TABLE aplicaciones_pago
+    MODIFY transaccion_id BIGINT NOT NULL COMMENT 'ID de transacciones';
+
+ALTER TABLE aplicaciones_pago
+    ADD CONSTRAINT aplicaciones_pago_ibfk_1
+        FOREIGN KEY (transaccion_id) REFERENCES transacciones(id)
+        ON DELETE CASCADE;
+
+ALTER TABLE eventos_entrada_salida
+    DROP INDEX eventos_entrada_salida_ibfk_3;
+
+ALTER TABLE eventos_entrada_salida
+    MODIFY transaccion_id BIGINT NULL COMMENT 'Referencia a transacciones si aplica';
+
+ALTER TABLE eventos_entrada_salida
+    ADD CONSTRAINT eventos_entrada_salida_ibfk_3
+        FOREIGN KEY (transaccion_id) REFERENCES transacciones(id)
+        ON DELETE SET NULL;
+
+ALTER TABLE eventos_entrada_salida
+    ADD CONSTRAINT fk_eventos_banco
+        FOREIGN KEY (banco_id) REFERENCES contabilidad_bancos(id)
+        ON DELETE SET NULL;
+
+CREATE INDEX idx_eventos_cuenta_fecha
+    ON eventos_entrada_salida (banco_id, caja_id, fecha_evento);

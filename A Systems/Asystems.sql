@@ -1087,4 +1087,4 @@ ALTER TABLE `documentos` ADD COLUMN  `estado_presupuesto_id` INT(11) NULL after 
 ALTER TABLE `documentos` ADD CONSTRAINT `fk_documento_estado_pre`
 FOREIGN KEY (`estado_presupuesto_id`) REFERENCES `documentos_estado_presupuesto`(`id`)
 ON DELETE SET NULL;
-
+-- verificacionde cambios

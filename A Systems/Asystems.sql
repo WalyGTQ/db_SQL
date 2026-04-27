@@ -1089,3 +1089,10 @@ FOREIGN KEY (`estado_presupuesto_id`) REFERENCES `documentos_estado_presupuesto`
 ON DELETE SET NULL;
 -- verificacionde cambios Cambios al 26/04/2026
 
+-- MOdificaciones realizadas el 27/4/2026
+ALTER TABLE `documentos`
+ADD COLUMN `servicio_recurrente_id` INT DEFAULT NULL AFTER `presupuesto_id`;
+
+ALTER TABLE `documentos`
+ADD CONSTRAINT `fk_documento_servicio_recurrente`
+FOREIGN KEY (`servicio_recurrente_id`) REFERENCES `servicios_recurrentes`(`id`) ON DELETE SET NULL;

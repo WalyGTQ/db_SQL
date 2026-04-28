@@ -1126,3 +1126,44 @@ ALTER TABLE eventos_entrada_salida
 
 CREATE INDEX idx_eventos_cuenta_fecha
     ON eventos_entrada_salida (banco_id, caja_id, fecha_evento);
+
+
+-- Modificaciones realizadas el dia 28/04/2026
+
+-- 1. Crear la tabla de frecuencias
+CREATE TABLE servicios_recurrentes_frecuencia (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 2. Insertar los valores solicitados
+INSERT INTO servicios_recurrentes_frecuencia (nombre, descripcion) VALUES
+('Diario', 'Facturación diaria'),
+('Semanal', 'Facturación semanal'),
+('Mensual', 'Facturación mensual'),
+('Trimestral', 'Facturación cada tres meses'),
+('Anual', 'Facturación anual');
+
+-- 3. Modificar la tabla servicios_recurrentes para la normalización
+-- Primero añadimos la columna de relación
+ALTER TABLE servicios_recurrentes
+ADD COLUMN frecuencia_id INT AFTER monto;
+
+-- 4. [Opcional pero recomendado] Mapear datos existentes si la tabla ya tiene registros
+-- Esto evita perder la información actual antes de borrar la columna 'frecuencia'
+UPDATE servicios_recurrentes SET frecuencia_id = (SELECT id FROM servicios_recurrentes_frecuencia WHERE nombre = 'Diario') WHERE frecuencia = 'DAILY';
+UPDATE servicios_recurrentes SET frecuencia_id = (SELECT id FROM servicios_recurrentes_frecuencia WHERE nombre = 'Semanal') WHERE frecuencia = 'WEEKLY';
+UPDATE servicios_recurrentes SET frecuencia_id = (SELECT id FROM servicios_recurrentes_frecuencia WHERE nombre = 'Mensual') WHERE frecuencia = 'MONTHLY';
+UPDATE servicios_recurrentes SET frecuencia_id = (SELECT id FROM servicios_recurrentes_frecuencia WHERE nombre = 'Trimestral') WHERE frecuencia = 'QUARTERLY';
+UPDATE servicios_recurrentes SET frecuencia_id = (SELECT id FROM servicios_recurrentes_frecuencia WHERE nombre = 'Anual') WHERE frecuencia = 'ANNUAL';
+
+-- 5. Eliminar el campo antiguo y establecer la relación formal
+ALTER TABLE servicios_recurrentes
+DROP COLUMN frecuencia;
+
+ALTER TABLE servicios_recurrentes
+ADD CONSTRAINT fk_servicios_recur_frecuencia
+FOREIGN KEY (frecuencia_id) REFERENCES servicios_recurrentes_frecuencia(id);
+
+

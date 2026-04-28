@@ -361,3 +361,32 @@ INSERT INTO parentesco_tipos (nombre) VALUES
 ('Padre'), ('Madre'), ('Padrino'), ('Madrina'), ('Testigo');
 
 INSERT INTO matrimonio_estados (nombre) VALUES ('Novios'), ('Unidos');
+
+-- Modoficaciones Posteriores: Creadas 28/04/2026
+
+
+CREATE TABLE personas_imagenes (
+    id_persona_imagen INT AUTO_INCREMENT PRIMARY KEY,
+    id_persona INT NOT NULL,
+    ruta VARCHAR(255) NOT NULL,
+    nombre_archivo VARCHAR(150),
+    es_principal TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (id_persona) REFERENCES personas(id_persona)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE iglesias_imagenes (
+    id_iglesia_imagen INT AUTO_INCREMENT PRIMARY KEY,
+    id_iglesia INT NOT NULL,
+    ruta VARCHAR(255) NOT NULL,
+    nombre_archivo VARCHAR(150),
+    es_principal TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (id_iglesia) REFERENCES iglesias(id_iglesia)
+) ENGINE=InnoDB;
+

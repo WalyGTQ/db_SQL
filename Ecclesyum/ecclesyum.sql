@@ -390,3 +390,42 @@ CREATE TABLE iglesias_imagenes (
     FOREIGN KEY (id_iglesia) REFERENCES iglesias(id_iglesia)
 ) ENGINE=InnoDB;
 
+-- Actualizaciones 30/04/2026
+
+-- 1. Tabla Maestra de Permisos
+-- Define las acciones específicas que se pueden realizar en el sistema
+CREATE TABLE permisos (
+    id_permiso INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL, -- Ejemplo: 'usuarios.ver', 'sacramentos.crear'
+    modulo VARCHAR(50),                -- Para agrupar: 'Usuarios', 'Sacramentos', 'Reportes'
+    descripcion TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL
+) ENGINE=InnoDB;
+
+-- 2. Tabla Relacional de Roles y Permisos
+-- Asocia qué permisos tiene cada rol
+CREATE TABLE roles_permisos (
+    id_role_permiso INT AUTO_INCREMENT PRIMARY KEY,
+    id_role INT NOT NULL,
+    id_permiso INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_role) REFERENCES roles(id_role) ON DELETE CASCADE,
+    FOREIGN KEY (id_permiso) REFERENCES permisos(id_permiso) ON DELETE CASCADE,
+    UNIQUE KEY (id_role, id_permiso) -- Evita duplicados
+) ENGINE=InnoDB;
+
+-- 3. Inserción de Permisos Base (Ejemplos)
+INSERT INTO permisos (nombre, slug, modulo, descripcion) VALUES
+('Ver Usuarios', 'usuarios.ver', 'Usuarios', 'Permite visualizar la lista de usuarios'),
+('Crear Usuarios', 'usuarios.crear', 'Usuarios', 'Permite registrar nuevos usuarios'),
+('Registrar Bautismo', 'sacramentos.bautismo.crear', 'Sacramentos', 'Permite inscribir nuevos bautismos'),
+('Emitir Constancias', 'reportes.constancias.emitir', 'Reportes', 'Permite generar PDFs de constancias'),
+('Configuración Global', 'config.sistema', 'Configuración', 'Acceso a ajustes generales del sitio');
+
+-- 4. Asignación de Permisos al Rol Administrador (id_role = 1)
+-- El Administrador suele tener todos los permisos
+INSERT INTO roles_permisos (id_role, id_permiso)
+SELECT 1, id_permiso FROM permisos;

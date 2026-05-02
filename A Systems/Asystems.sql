@@ -1166,4 +1166,23 @@ ALTER TABLE servicios_recurrentes
 ADD CONSTRAINT fk_servicios_recur_frecuencia
 FOREIGN KEY (frecuencia_id) REFERENCES servicios_recurrentes_frecuencia(id);
 
+-- modificacion realizada el 02/05/2026
+ALTER TABLE socios_negocio
+ADD COLUMN codigo_unico VARCHAR(50) NULL AFTER id,
+ADD CONSTRAINT uq_socio_codigo_unico UNIQUE (codigo_unico);
+
+-- 1. Agregamos el campo codigo_unico a la tabla usuarios
+ALTER TABLE usuarios
+ADD COLUMN codigo_unico VARCHAR(50) NULL COMMENT 'Código único para vincular con socio de negocio' AFTER token;
+
+-- 2. Aseguramos que el código único no se repita en múltiples usuarios (opcional pero recomendado para la integridad)
+ALTER TABLE usuarios
+ADD CONSTRAINT uq_usuario_codigo_unico UNIQUE (codigo_unico);
+
+-- 3. Creamos la llave foránea que asocia usuarios.codigo_unico con socios_negocio.codigo_unico
+ALTER TABLE usuarios
+ADD CONSTRAINT fk_usuario_socio_cu
+FOREIGN KEY (codigo_unico) REFERENCES socios_negocio(codigo_unico)
+ON UPDATE CASCADE
+ON DELETE SET NULL;
 
